@@ -198,101 +198,7 @@ python tools/test.py [CONFIG] [CHECKPOINT] [OPTIONS]
 
 ## 单张图片推理
 
-如果你只想对单张图片进行推理，可以使用以下脚本：
-
-### 创建推理脚本
-
-创建文件 `tools/inference_single.py`：
-
-```python
-import argparse
-import os
-import os.path as osp
-import sys
-
-# 设置路径
-os.chdir(osp.abspath(osp.dirname(osp.dirname(__file__))))
-sys.path.append(os.curdir)
-
-import numpy as np
-from PIL import Image
-import torch
-from mmengine.config import Config
-from mmseg.apis import init_model, inference_model
-import CrossEarth
-import rs_dataset
-
-
-def parse_args():
-    parser = argparse.ArgumentParser(description='单张图片语义分割推理')
-    parser.add_argument('config', help='配置文件路径')
-    parser.add_argument('checkpoint', help='模型权重路径')
-    parser.add_argument('image', help='输入图片路径')
-    parser.add_argument('--output', '-o', default='./output', help='输出目录')
-    parser.add_argument('--device', default='cuda:0', help='推理设备')
-    return parser.parse_args()
-
-
-def colorize_mask(mask, num_classes):
-    """将预测的类别标签转换为彩色图片"""
-    # 定义颜色调色板（可根据需要调整）
-    palette = np.array([
-        [0, 0, 0],       # 背景
-        [255, 0, 0],     # 类别1
-        [0, 255, 0],     # 类别2
-        [0, 0, 255],     # 类别3
-        [255, 255, 0],   # 类别4
-        [255, 0, 255],   # 类别5
-        [0, 255, 255],   # 类别6
-        [128, 128, 128], # 类别7
-        [255, 128, 0],   # 类别8
-        [128, 0, 255],   # 类别9
-    ], dtype=np.uint8)
-    
-    color_mask = palette[mask % len(palette)]
-    return color_mask
-
-
-def main():
-    args = parse_args()
-    
-    # 创建输出目录
-    os.makedirs(args.output, exist_ok=True)
-    
-    # 加载配置和模型
-    print(f'正在加载配置文件: {args.config}')
-    cfg = Config.fromfile(args.config)
-    
-    print(f'正在加载模型: {args.checkpoint}')
-    model = init_model(cfg, args.checkpoint, device=args.device)
-    
-    # 进行推理
-    print(f'正在处理图片: {args.image}')
-    result = inference_model(model, args.image)
-    
-    # 获取预测结果
-    pred_mask = result.pred_sem_seg.data.cpu().numpy().squeeze()
-    
-    # 保存结果
-    basename = osp.splitext(osp.basename(args.image))[0]
-    
-    # 保存原始预测标签
-    label_path = osp.join(args.output, f'{basename}_pred.png')
-    Image.fromarray(pred_mask.astype(np.uint8)).save(label_path)
-    print(f'预测标签已保存到: {label_path}')
-    
-    # 保存彩色可视化结果
-    color_mask = colorize_mask(pred_mask, cfg.model.decode_head.num_classes)
-    color_path = osp.join(args.output, f'{basename}_color.png')
-    Image.fromarray(color_mask).save(color_path)
-    print(f'彩色结果已保存到: {color_path}')
-    
-    print('推理完成!')
-
-
-if __name__ == '__main__':
-    main()
-```
+如果你只想对单张图片进行推理，可以使用仓库中提供的 `tools/inference_single.py` 脚本。
 
 ### 使用方法
 
@@ -302,7 +208,26 @@ python tools/inference_single.py configs/CrossEarth_dinov2/CrossEarth_dinov2_mas
 
 # 指定输出目录和设备
 python tools/inference_single.py configs/CrossEarth_dinov2/CrossEarth_dinov2_mask2former_512x512_bs1x4.py ./checkpoints/your_model.pth ./test_image.png --output ./my_results --device cuda:0
+
+# 使用特定的调色板进行可视化
+python tools/inference_single.py configs/CrossEarth_dinov2/CrossEarth_dinov2_mask2former_512x512_bs1x4.py ./checkpoints/your_model.pth ./test_image.png --palette isprs
 ```
+
+### 可用的调色板选项
+
+| 调色板名称 | 适用数据集 | 类别数 |
+|-----------|-----------|-------|
+| `default` | 通用 | 8 |
+| `isprs` | ISPRS Potsdam/Vaihingen | 6 |
+| `loveda` | LoveDA | 7 |
+| `building` | WHU Building | 2 |
+| `rescue` | RescueNet | 5 |
+
+### 输出文件
+
+脚本会在输出目录生成两个文件：
+- `{图片名}_pred.png`: 原始预测标签（灰度图）
+- `{图片名}_color.png`: 彩色可视化结果
 
 ## 常见问题
 

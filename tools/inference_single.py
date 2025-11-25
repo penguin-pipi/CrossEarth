@@ -9,17 +9,18 @@ import os
 import os.path as osp
 import sys
 
-# 设置路径
+# 设置路径 (与 test.py 保持一致的风格)
 os.chdir(osp.abspath(osp.dirname(osp.dirname(__file__))))
 sys.path.append(os.curdir)
 
 import numpy as np
 from PIL import Image
-import CrossEarth
-import rs_dataset
 
 from mmengine.config import Config
 from mmseg.apis import init_model, inference_model
+
+import CrossEarth
+import rs_dataset
 
 
 def parse_args():
@@ -79,9 +80,32 @@ PALETTES = {
 
 
 def colorize_mask(mask, palette_name='default'):
-    """将预测的类别标签转换为彩色图片"""
-    palette = np.array(PALETTES.get(palette_name, PALETTES['default']), dtype=np.uint8)
-    color_mask = palette[mask % len(palette)]
+    """将预测的类别标签转换为彩色图片
+    
+    Args:
+        mask: 预测的分割掩码，包含类别索引
+        palette_name: 调色板名称
+        
+    Returns:
+        彩色RGB图像数组
+        
+    Note:
+        如果类别索引超出调色板大小，将使用灰色 [128, 128, 128] 表示未知类别
+    """
+    palette = PALETTES.get(palette_name, PALETTES['default'])
+    palette_array = np.array(palette, dtype=np.uint8)
+    
+    # 创建输出图像
+    color_mask = np.zeros((*mask.shape, 3), dtype=np.uint8)
+    
+    # 对每个类别进行着色
+    for class_idx in np.unique(mask):
+        if class_idx < len(palette_array):
+            color_mask[mask == class_idx] = palette_array[class_idx]
+        else:
+            # 未知类别使用灰色
+            color_mask[mask == class_idx] = [128, 128, 128]
+    
     return color_mask
 
 
@@ -89,6 +113,14 @@ def main():
     args = parse_args()
     
     # 检查输入文件是否存在
+    if not osp.exists(args.config):
+        print(f'错误: 配置文件不存在: {args.config}')
+        sys.exit(1)
+    
+    if not osp.exists(args.checkpoint):
+        print(f'错误: 模型权重不存在: {args.checkpoint}')
+        sys.exit(1)
+    
     if not osp.exists(args.image):
         print(f'错误: 输入图片不存在: {args.image}')
         sys.exit(1)
