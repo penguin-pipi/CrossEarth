@@ -44,8 +44,10 @@
 - [Visualization](#visualization)
 - [Environment Requirements](#environment-requirements)
 - [Inference steps](#inference-steps)
+- [Single Image Inference](#single-image-inference)
 - [Training steps](#training-steps)
 - [Model Weights with Configs](#model-weights-with-configs)
+- [中文文档](#中文文档)
 <!-- - [Citation](#citation)
  -->
 
@@ -88,6 +90,20 @@ Second, change the file path in experiment config files (__configs/base/datasets
 python tools/test.py configs/CrossEarth_dinov2/CrossEarth_dinov2_mask2former_512x512_bs1x4.py ./checkpoints/xxx.pth
 ```
 Notably, save path of pseudo labels is in the experiment config file. When testing CrossEarth on different benchmarks, you also need to change the class number in [CrossEarth_dinov2_mask2former.py](https://github.com/Cuzyoung/CrossEarth/blob/main/configs/_base_/models/CrossEarth_dinov2_mask2former.py) file.
+
+## Single Image Inference
+
+For single image inference, you can use the `inference_single.py` script:
+
+```bash
+# Basic usage
+python tools/inference_single.py configs/CrossEarth_dinov2/CrossEarth_dinov2_mask2former_512x512_bs1x4.py ./checkpoints/your_model.pth ./your_image.png
+
+# Specify output directory and palette
+python tools/inference_single.py configs/CrossEarth_dinov2/CrossEarth_dinov2_mask2former_512x512_bs1x4.py ./checkpoints/your_model.pth ./your_image.png --output ./results --palette isprs
+```
+
+Available palettes: `default`, `isprs`, `loveda`, `building`, `rescue`
 
 ## Training steps:
 
@@ -143,6 +159,18 @@ If you find CrossEarth helpful, please consider giving this repo a ⭐ and citin
 # Other Related Works
 - [MTP: Advancing remote sensing foundation model via multi-task pretraining](https://arxiv.org/abs/2403.13430)
 - [Stronger, Fewer, & Superior: Harnessing Vision Foundation Models for Domain Generalized Semantic Segmentation](https://arxiv.org/abs/2312.04265)
+
+# 中文文档
+
+如果您需要详细的中文本地推理指南，请参考 [本地语义分割推理指南](./docs/LOCAL_INFERENCE_CN.md)。
+
+该文档包含:
+- 完整的环境配置步骤
+- 模型权重下载说明
+- 数据准备指南
+- 推理命令详解
+- 单张图片推理脚本使用方法
+- 常见问题解答
 
 
 
